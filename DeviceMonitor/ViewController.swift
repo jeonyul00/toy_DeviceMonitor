@@ -10,19 +10,34 @@ import UIKit
 class ViewController: UIViewController {
     
     @IBOutlet weak var tableView: UITableView!
-    var observer: NSObjectProtocol?
+    var observers = [NSObjectProtocol]()
     
     override func viewDidLoad() {
         super.viewDidLoad()
         tableView.dataSource = self
-        observer = NotificationCenter.default.addObserver(forName: UIDevice.orientationDidChangeNotification, object: nil, queue: .main, using: { [weak self] _ in
+        UIDevice.current.isBatteryMonitoringEnabled = true
+        var observer = NotificationCenter.default.addObserver(forName: UIDevice.orientationDidChangeNotification, object: nil, queue: .main, using: { [weak self] _ in
             let indexPath = IndexPath(row: 3, section: 0)
             (self?.view.subviews.first as? UITableView)?.reloadRows(at: [indexPath], with: .automatic)
         })
+        observers.append(observer)
+        
+        observer = NotificationCenter.default.addObserver(forName: UIDevice.batteryLevelDidChangeNotification, object: nil, queue: .main, using: { [weak self] _ in
+            let indexPath = IndexPath(row: 5, section: 0)
+            (self?.view.subviews.first as? UITableView)?.reloadRows(at: [indexPath], with: .automatic)
+        })
+        observers.append(observer)
+        
+        observer = NotificationCenter.default.addObserver(forName: UIDevice.batteryStateDidChangeNotification, object: nil, queue: .main, using: { [weak self] _ in
+            let indexPath = IndexPath(row: 6, section: 0)
+            (self?.view.subviews.first as? UITableView)?.reloadRows(at: [indexPath], with: .automatic)
+        })
+        observers.append(observer)
     }
     
     deinit {
-        if let observer {
+        
+        for observer in observers {
             NotificationCenter.default.removeObserver(observer)
         }
     }
@@ -32,7 +47,7 @@ class ViewController: UIViewController {
 
 extension ViewController:UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return 4
+        return 7
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
@@ -83,6 +98,35 @@ extension ViewController:UITableViewDataSource {
                 cell.detailTextLabel?.text = "평면 (카메라 위치: 바닥)"
             @unknown default:
                 fatalError()
+            }
+        case 4:
+            cell.textLabel?.text = "배터리 모니터링"
+            cell.detailTextLabel?.text = UIDevice.current.isBatteryMonitoringEnabled ? "활성" : "비활성"
+        case 5:
+            cell.textLabel?.text = "배터리 레벨"
+            if UIDevice.current.isBatteryMonitoringEnabled {
+                cell.detailTextLabel?.text = "\(Int(UIDevice.current.batteryLevel * 100))%"
+            } else {
+                cell.detailTextLabel?.text = "-"
+            }
+            
+        case 6:
+            cell.textLabel?.text = "충전 상태"
+            if UIDevice.current.isBatteryMonitoringEnabled {
+                switch UIDevice.current.batteryState {
+                case .unknown:
+                    cell.detailTextLabel?.text = "알 수 없음"
+                case .unplugged:
+                    cell.detailTextLabel?.text = "연결되지 않음"
+                case .charging:
+                    cell.detailTextLabel?.text = "충전중"
+                case .full:
+                    cell.detailTextLabel?.text = "충전완료"
+                @unknown default:
+                    fatalError()
+                }
+            } else {
+                cell.detailTextLabel?.text = "-"
             }
         default:
             break
