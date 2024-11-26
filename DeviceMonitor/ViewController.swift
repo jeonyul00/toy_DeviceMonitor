@@ -16,6 +16,7 @@ class ViewController: UIViewController {
         super.viewDidLoad()
         tableView.dataSource = self
         UIDevice.current.isBatteryMonitoringEnabled = true
+        UIDevice.current.isProximityMonitoringEnabled = true
         var observer = NotificationCenter.default.addObserver(forName: UIDevice.orientationDidChangeNotification, object: nil, queue: .main, using: { [weak self] _ in
             let indexPath = IndexPath(row: 3, section: 0)
             (self?.view.subviews.first as? UITableView)?.reloadRows(at: [indexPath], with: .automatic)
@@ -33,6 +34,13 @@ class ViewController: UIViewController {
             (self?.view.subviews.first as? UITableView)?.reloadRows(at: [indexPath], with: .automatic)
         })
         observers.append(observer)
+        
+        observer = NotificationCenter.default.addObserver(forName: UIDevice.proximityStateDidChangeNotification, object: nil, queue: .main, using: { [weak self] _ in
+            let indexPath = IndexPath(row: 7, section: 0)
+            (self?.view.subviews.first as? UITableView)?.reloadRows(at: [indexPath], with: .automatic)
+        })
+        observers.append(observer)
+
     }
     
     deinit {
@@ -47,7 +55,7 @@ class ViewController: UIViewController {
 
 extension ViewController:UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return 7
+        return 8
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
@@ -109,7 +117,6 @@ extension ViewController:UITableViewDataSource {
             } else {
                 cell.detailTextLabel?.text = "-"
             }
-            
         case 6:
             cell.textLabel?.text = "충전 상태"
             if UIDevice.current.isBatteryMonitoringEnabled {
@@ -128,10 +135,16 @@ extension ViewController:UITableViewDataSource {
             } else {
                 cell.detailTextLabel?.text = "-"
             }
+        case 7:
+            cell.textLabel?.text = "근접 센서"
+            if UIDevice.current.isProximityMonitoringEnabled {
+                cell.detailTextLabel?.text = UIDevice.current.proximityState ? "근접" : "비근접"
+            } else {
+                cell.detailTextLabel?.text = "모니터링 비활성"
+            }
         default:
             break
         }
         return cell
     }
-    
 }
